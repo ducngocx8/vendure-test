@@ -4,6 +4,7 @@ import {
     DefaultSchedulerPlugin,
     DefaultSearchPlugin,
     VendureConfig,
+    LanguageCode,
 } from '@vendure/core';
 import { defaultEmailHandlers, EmailPlugin, FileBasedTemplateLoader } from '@vendure/email-plugin';
 import { AssetServerPlugin } from '@vendure/asset-server-plugin';
@@ -11,6 +12,7 @@ import { DashboardPlugin } from '@vendure/dashboard/plugin';
 import { GraphiqlPlugin } from '@vendure/graphiql-plugin';
 import 'dotenv/config';
 import path from 'path';
+import { MemberPriceStrategy } from './config/member-price.strategy';
 
 const IS_DEV = process.env.APP_ENV === 'dev';
 const serverPort = +process.env.PORT || 3000;
@@ -36,7 +38,7 @@ export const config: VendureConfig = {
             password: process.env.SUPERADMIN_PASSWORD,
         },
         cookieOptions: {
-          secret: process.env.COOKIE_SECRET,
+            secret: process.env.COOKIE_SECRET,
         },
     },
     dbConnectionOptions: {
@@ -56,9 +58,80 @@ export const config: VendureConfig = {
     paymentOptions: {
         paymentMethodHandlers: [dummyPaymentHandler],
     },
+
+    catalogOptions: {
+        // Đăng ký ở đây thì file mới bắt đầu "chạy"
+        productVariantPriceSelectionStrategy: new MemberPriceStrategy(),
+    },
     // When adding or altering custom field definitions, the database will
     // need to be updated. See the "Migrations" section in README.md.
-    customFields: {},
+    customFields: {
+        Product: [
+            {
+                name: 'misaId',
+                type: 'string',
+                label: [{ languageCode: LanguageCode.vi, value: 'ID MISA' }],
+                public: false
+            },
+            {
+                name: 'brandName',
+                type: 'string',
+                label: [{ languageCode: LanguageCode.vi, value: 'Thương hiệu' }]
+            }
+        ],
+        ProductVariant: [
+            {
+                name: 'misaId',
+                type: 'string',
+                label: [{ languageCode: LanguageCode.vi, value: 'ID MISA' }],
+                public: false // Chỉ dùng nội bộ để đồng bộ, không hiện ra ngoài shop
+            },
+            {
+                name: 'purchasePrice',
+                type: 'int', // Vendure lưu giá dưới dạng số nguyên (ví dụ: 100000)
+                label: [{ languageCode: LanguageCode.vi, value: 'Giá mua (vốn)' }]
+            },
+            {
+                name: 'unitId',
+                type: 'string',
+                label: [{ languageCode: LanguageCode.vi, value: 'ID Đơn vị tính' }]
+            },
+            {
+                name: 'weight',
+                type: 'float',
+                label: [{ languageCode: LanguageCode.vi, value: 'Trọng lượng (g)' }]
+            },
+            {
+                name: 'length',
+                type: 'float',
+                label: [{ languageCode: LanguageCode.vi, value: 'Chiều dài (cm)' }]
+            },
+            {
+                name: 'width',
+                type: 'float',
+                label: [{ languageCode: LanguageCode.vi, value: 'Chiều rộng (cm)' }]
+            },
+            {
+                name: 'height',
+                type: 'float',
+                label: [{ languageCode: LanguageCode.vi, value: 'Chiều cao (cm)' }]
+            },
+            {
+                name: 'memberPrice',
+                type: 'int', // Lưu dưới dạng đơn vị nhỏ nhất (vd: 100000 thay vì 100k)
+                public: true,
+                label: [{ languageCode: LanguageCode.vi, value: 'Giá thành viên (MISA B)' }],
+            },
+        ],
+        Collection: [
+            {
+                name: 'misaId',
+                type: 'string',
+                label: [{ languageCode: LanguageCode.vi, value: 'ID MISA' }],
+                public: false
+            }
+        ],
+    },
     plugins: [
         GraphiqlPlugin.init(),
         AssetServerPlugin.init({
